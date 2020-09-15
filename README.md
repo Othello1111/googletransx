@@ -4,8 +4,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/yuriizinets/googletransx)](https://goreportcard.com/report/github.com/mind1949/googletrans)
 
 This is fork of mind1949/googletrans with extended features:
-* BulkTranslate
-* BulkTranslatePipeline
+* BulkTranslate with goroutines processing
+* HTML translate support
  
 ## Installation
 
@@ -16,3 +16,4 @@ go get -u github.com/mind1949/googletrans
 ## Usage
 
 For usage doc of basic operations, check original repo: https://github.com/mind1949/googletrans
+Here will be mentioned only extended features
