@@ -10,7 +10,7 @@ This is fork of mind1949/googletrans with extended features:
 ## Installation
 
 ```
-go get -u github.com/mind1949/googletrans
+go get -u github.com/yuriizinets/googletransx
 ```
 
 ## Usage
