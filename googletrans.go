@@ -2,13 +2,16 @@ package googletrans
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"golang.org/x/net/html"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"text/scanner"
 	"time"
 
@@ -34,6 +37,11 @@ func Translate(params TranslateParams) (Translated, error) {
 	return defaultTranslator.Translate(params)
 }
 
+// BulkTranslate uses defaultTranslator to bulk translate with goroutines
+func BulkTranslate(params []TranslateParams) ([]Translated, error) {
+	return defaultTranslator.BulkTranslate(params)
+}
+
 // Detect uses defaultTranslator to detect language
 func Detect(text string) (Detected, error) {
 	return defaultTranslator.Detect(text)
@@ -46,9 +54,10 @@ func Append(serviceURLs ...string) {
 
 // TranslateParams represents translate params
 type TranslateParams struct {
-	Src  string `json:"src"`  // source language (default: auto)
-	Dest string `json:"dest"` // destination language
-	Text string `json:"text"` // text for translating
+	Src      string `json:"src"`  // source language (default: auto)
+	Dest     string `json:"dest"` // destination language
+	Text     string `json:"text"` // text for translating
+	MimeType string
 }
 
 // Translated represents translated result
@@ -108,16 +117,77 @@ func (t *Translator) Translate(params TranslateParams) (Translated, error) {
 		params.Src = "auto"
 	}
 
-	transData, err := t.do(params)
-	if err != nil {
-		return emptyTranlated, err
+	if params.MimeType == "text/plain" || params.MimeType == "" {
+		// Default case
+		transData, err := t.do(params)
+		if err != nil {
+			return emptyTranlated, err
+		}
+		return Translated{
+			Params:        params,
+			Text:          transData.translated.text,
+			Pronunciation: transData.translated.pronunciation,
+		}, nil
+	} else if params.MimeType == "text/html" { // HTML case
+		// Extract texts from html
+		texts := ExtractTextsFromHTML(params.Text)
+		// Build parameters for bulk
+		totranslate := []TranslateParams{}
+		for _, t := range texts {
+			totranslate = append(totranslate, TranslateParams{
+				Text: t,
+				Src:  t,
+				Dest: params.Dest,
+			})
+		}
+		// Translate built parameters
+		translated, err := t.BulkTranslate(totranslate)
+		if err != nil {
+			return Translated{}, err
+		}
+		// Replace source HTML with translated parts
+		text := params.Text
+		for i := 0; i < len(totranslate); i++ {
+			text = strings.ReplaceAll(text, totranslate[i].Text, translated[i].Text)
+		}
+		// Return
+		return Translated{
+			Params: params,
+			Text:   text,
+		}, nil
+	}
+	return Translated{}, errors.New("MimeType not supported")
+}
+
+// BulkTranslate translates texts to dest language with goroutines
+func (t *Translator) BulkTranslate(params []TranslateParams) ([]Translated, error) {
+	// Final results store
+	results := []Translated{}
+
+	// Translate with goroutines
+	var wg sync.WaitGroup
+	rchan := make(chan Translated, len(params))
+	for _, p := range params {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, p TranslateParams, r chan<- Translated) {
+			defer wg.Done()
+			result, err := t.Translate(p)
+			if err != nil {
+				panic(err)
+			}
+			r <- result
+		}(&wg, p, rchan)
+	}
+	wg.Wait()
+	close(rchan)
+
+	// Extract from chan
+	for r := range rchan {
+		results = append(results, r)
 	}
 
-	return Translated{
-		Params:        params,
-		Text:          transData.translated.text,
-		Pronunciation: transData.translated.pronunciation,
-	}, nil
+	// Return
+	return results, nil
 }
 
 // Detect detects text's language
@@ -298,6 +368,25 @@ func (t *Translator) Append(serviceURLs ...string) {
 
 func (t *Translator) randomServiceURL() (serviceURL string) {
 	return random(t.serviceURLs)
+}
+
+func ExtractTextsFromHTML(htmlsource string) []string {
+	texts := []string{}
+	tokenizer := html.NewTokenizer(bytes.NewBufferString(htmlsource))
+	for {
+		tt := tokenizer.Next()
+		exit := false
+		switch {
+		case tt == html.ErrorToken:
+			exit = true
+		case tt == html.TextToken:
+			texts = append(texts, string(tokenizer.Text()))
+		}
+		if exit {
+			break
+		}
+	}
+	return texts
 }
 
 func random(list []string) string {
