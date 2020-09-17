@@ -58,7 +58,7 @@ type TranslateParams struct {
 	Src      string `json:"src"`  // source language (default: auto)
 	Dest     string `json:"dest"` // destination language
 	Text     string `json:"text"` // text for translating
-	MimeType string
+	MimeType string `json:"mimetype"`
 }
 
 // Translated represents translated result
