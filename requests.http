@@ -1,0 +1,35 @@
+
+
+POST http://localhost:25021/detect
+
+{
+    "Text": "Some example"
+}
+
+###
+
+POST http://localhost:25021/translate
+
+{
+    "Src": "auto",
+    "Dest": "es",
+    "Text": "Some example"
+}
+
+###
+
+POST http://localhost:25021/translate/bulk
+
+
+[
+    {
+        "Src": "auto",
+        "Dest": "es",
+        "Text": "Some example 1"
+    },
+    {
+        "Src": "auto",
+        "Dest": "es",
+        "Text": "Some example 2"
+    }
+]

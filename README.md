@@ -8,6 +8,8 @@ This is fork of mind1949/googletrans with extended features:
 
 * BulkTranslate with goroutines processing
 * HTML translate support
+* Built-in API server for integrations
+* Dockerized server
 
 ## Installation
 
@@ -71,3 +73,5 @@ func main() {
 ## Known issues
 
 * `socket: too many open files` too many connections while making BulkTranslate. Can be temporary fixed with ulimit -Sn 100000
+* Pronunciation is not working
+* Somethings not working? Just create new issue
