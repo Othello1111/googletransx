@@ -16,9 +16,9 @@ import (
 
 	"golang.org/x/net/html"
 
-	"github.com/mind1949/googletrans/tk"
-	"github.com/mind1949/googletrans/tkk"
-	"github.com/mind1949/googletrans/transcookie"
+	"github.com/yuriizinets/googletransx/tk"
+	"github.com/yuriizinets/googletransx/tkk"
+	"github.com/yuriizinets/googletransx/transcookie"
 )
 
 const (

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mind1949/googletrans/transcookie"
+	"github.com/yuriizinets/googletransx/transcookie"
 )
 
 // Get gets tkk
