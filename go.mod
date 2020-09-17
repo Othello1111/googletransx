@@ -1,4 +1,4 @@
-module github.com/mind1949/googletrans
+module github.com/yuriizinets/googletransx
 
 go 1.14
 

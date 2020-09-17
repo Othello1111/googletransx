@@ -1,4 +1,4 @@
-package googletrans
+package googletransx
 
 import (
 	"testing"

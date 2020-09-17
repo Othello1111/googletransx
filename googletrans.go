@@ -1,10 +1,9 @@
-package googletrans
+package googletransx
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
-	"golang.org/x/net/html"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -14,6 +13,8 @@ import (
 	"sync"
 	"text/scanner"
 	"time"
+
+	"golang.org/x/net/html"
 
 	"github.com/mind1949/googletrans/tk"
 	"github.com/mind1949/googletrans/tkk"
