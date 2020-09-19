@@ -1,3 +1,6 @@
+
+![google translate logo](https://resize.indiatvnews.com/en/resize/newbucket/1200_-/2019/12/google-translate-1575354629.jpg)
+
 # GoogletransX
 
 [![language](https://img.shields.io/badge/language-Golang-blue)](https://golang.org/)
@@ -14,7 +17,8 @@ This is fork of mind1949/googletrans with extended features:
 ## Installation
 
 ```bash
-go get -u github.com/yuriizinets/googletransx
+$ go get -u github.com/yuriizinets/googletransx
+...
 ```
 
 ## Usage
@@ -68,6 +72,21 @@ func main() {
     }
     fmt.Println(results) // Results are []Translated
 }
+```
+
+API Server (native)
+
+```bash
+$ go run github.com/yuriizinets/googletransx/server.runtime
+Starting server at :25021
+```
+
+API Server (docker)
+
+```bash
+$ docker pull docker.pkg.github.com/yuriizinets/googletransx/googletransx:latest
+$ docker run -p 25021:25021 googletransx
+Starting server at :25021
 ```
 
 ## Known issues
