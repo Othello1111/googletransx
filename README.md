@@ -75,6 +75,7 @@ func main() {
 ```
 
 API Server (native)
+*For request examples just check requests.http*
 
 ```bash
 $ go run github.com/yuriizinets/googletransx/server.runtime
