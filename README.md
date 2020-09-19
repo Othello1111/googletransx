@@ -74,7 +74,7 @@ func main() {
 }
 ```
 
-API Server (native)
+API Server (native)  
 *For request examples just check requests.http*  
 
 ```bash
