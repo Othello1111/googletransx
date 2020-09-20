@@ -7,6 +7,8 @@
 [![Documentation](https://godoc.org/github.com//yuriizinets/googletransx?status.svg)](https://godoc.org/github.com/mind1949/googletrans)
 [![Go Report Card](https://goreportcard.com/badge/github.com/yuriizinets/googletransx)](https://goreportcard.com/report/github.com/mind1949/googletrans)
 
+*Disclaimer: this is not official library and breaks google policies, use it carefully*
+
 This is fork of mind1949/googletrans with extended features:
 
 * BulkTranslate with goroutines processing
