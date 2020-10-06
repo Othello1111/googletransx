@@ -2,7 +2,6 @@ package googletransx
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/objx"
@@ -143,5 +142,4 @@ func TestTranslateInterface(t *testing.T) {
 	if m.Get("A.D_ru[1]").Str() != "пример" {
 		t.Errorf("A.D_ru[1] is incorrect. Got %s instead", m.Get("A.D_ru[1]").Str())
 	}
-	fmt.Println(output)
 }
