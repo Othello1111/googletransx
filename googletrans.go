@@ -8,12 +8,14 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"text/scanner"
 	"time"
 
+	"github.com/stretchr/objx"
 	"golang.org/x/net/html"
 
 	"github.com/yuriizinets/googletransx/tk"
@@ -43,6 +45,11 @@ func BulkTranslate(params []TranslateParams) ([]Translated, error) {
 	return defaultTranslator.BulkTranslate(params)
 }
 
+// TranslateInterface uses defaultTranslator to translate structure according to provided parameters
+func TranslateInterface(i interface{}, fields []TranslateField) (interface{}, error) {
+	return defaultTranslator.TranslateInterface(i, fields)
+}
+
 // Detect uses defaultTranslator to detect language
 func Detect(text string) (Detected, error) {
 	return defaultTranslator.Detect(text)
@@ -55,10 +62,18 @@ func Append(serviceURLs ...string) {
 
 // TranslateParams represents translate params
 type TranslateParams struct {
+	UID      int    // unique params identified (optional)
 	Src      string `json:"src"`  // source language (default: auto)
 	Dest     string `json:"dest"` // destination language
 	Text     string `json:"text"` // text for translating
 	MimeType string `json:"mimetype"`
+}
+
+// TranslateField represents interface field translate settings
+type TranslateField struct {
+	Src    string          `json:"src"`
+	Dest   string          `json:"dest"`
+	Params TranslateParams `json:"params"`
 }
 
 // Translated represents translated result
@@ -131,7 +146,7 @@ func (t *Translator) Translate(params TranslateParams) (Translated, error) {
 		}, nil
 	} else if params.MimeType == "text/html" { // HTML case
 		// Extract texts from html
-		texts := ExtractTextsFromHTML(params.Text)
+		texts := extractTextsFromHTML(params.Text)
 		// Build parameters for bulk
 		totranslate := []TranslateParams{}
 		for _, t := range texts {
@@ -165,6 +180,13 @@ func (t *Translator) BulkTranslate(params []TranslateParams) ([]Translated, erro
 	// Final results store
 	results := []Translated{}
 
+	// Set uids
+	for i := 0; i < len(params); i++ {
+		if params[i].UID == 0 {
+			params[i].UID = i + 1
+		}
+	}
+
 	// Translate with goroutines
 	var wg sync.WaitGroup
 	rchan := make(chan Translated, len(params))
@@ -187,8 +209,64 @@ func (t *Translator) BulkTranslate(params []TranslateParams) ([]Translated, erro
 		results = append(results, r)
 	}
 
+	// Order
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Params.UID < results[j].Params.UID
+	})
+
 	// Return
 	return results, nil
+}
+
+// TranslateInterface is a method for translating structure according to provided parameters
+func (t *Translator) TranslateInterface(i interface{}, fields []TranslateField) (interface{}, error) {
+	obj := objx.New(i)
+	// Populate params translation data
+	params := []TranslateParams{}
+	for _, f := range fields {
+		if obj.Get(f.Src).IsStrSlice() {
+			nestedparams := []TranslateParams{}
+			for _, val := range obj.Get(f.Src).StringSlice() {
+				params = append(params, TranslateParams{
+					Src:      f.Params.Src,
+					Dest:     f.Params.Dest,
+					Text:     val,
+					MimeType: f.Params.MimeType,
+				})
+			}
+			params = append(params, nestedparams...)
+		} else if obj.Get(f.Src).IsStr() {
+			params = append(params, TranslateParams{
+				Src:      f.Params.Src,
+				Dest:     f.Params.Dest,
+				Text:     obj.Get(f.Src).Str(),
+				MimeType: f.Params.MimeType,
+			})
+		}
+	}
+	// Translate
+	translated, err := t.BulkTranslate(params)
+	if err != nil {
+		return nil, err
+	}
+	// Inject
+	for _, f := range fields {
+		if obj.Get(f.Src).IsStrSlice() {
+			translatedSlice := []string{}
+			for i := 0; i < len(obj.Get(f.Src).StrSlice()); i++ {
+				translation := translated[0]
+				translated = append(translated[:0], translated[1:]...)
+				translatedSlice = append(translatedSlice, translation.Text)
+			}
+			obj.Set(f.Dest, translatedSlice)
+		} else if obj.Get(f.Src).IsStr() {
+			translation := translated[0]
+			translated = append(translated[:0], translated[1:]...)
+			obj.Set(f.Dest, translation.Text)
+		}
+	}
+	// Return
+	return i, nil
 }
 
 // Detect detects text's language
@@ -371,7 +449,7 @@ func (t *Translator) randomServiceURL() (serviceURL string) {
 	return random(t.serviceURLs)
 }
 
-func ExtractTextsFromHTML(htmlsource string) []string {
+func extractTextsFromHTML(htmlsource string) []string {
 	texts := []string{}
 	tokenizer := html.NewTokenizer(bytes.NewBufferString(htmlsource))
 	for {

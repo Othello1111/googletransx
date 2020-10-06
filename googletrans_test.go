@@ -2,7 +2,10 @@ package googletransx
 
 import (
 	"errors"
+	"fmt"
 	"testing"
+
+	"github.com/stretchr/objx"
 )
 
 var smallTestSlice = []string{"Closet Cabinetry", "Entrance Foyer", "Pantry", "Split Bedroom", "Walk-In Closet(s)", "Family Room", "Florida Room", "Media Room", "4371 Casper Ct, Hollywood FL 33021"}
@@ -47,24 +50,24 @@ func TestDetect(t *testing.T) {
 
 func TestExtractTextsFromHTML(t *testing.T) {
 	htmlsource := "<div>Some<span>test</span></div>"
-	texts := ExtractTextsFromHTML(htmlsource)
+	texts := extractTextsFromHTML(htmlsource)
 	if len(texts) != 2 {
 		t.Error(errors.New("Incorrect count of extracted texts"))
 	}
 }
 
 func TestTranslateHTML(t *testing.T) {
-	input := "<div>Some<span>test</span></div>"
+	input := "<div>Example<span>example</span></div>"
 	result, err := Translate(TranslateParams{
 		Text:     input,
 		Src:      "auto",
-		Dest:     "zh-CN",
+		Dest:     "ru",
 		MimeType: "text/html",
 	})
 	if err != nil {
 		t.Error(err)
 	}
-	if result.Text != "<div>一些<span>测试</span></div>" {
+	if result.Text != "<div>пример<span>пример</span></div>" {
 		t.Error(errors.New("HTML translation is incorrect"))
 		t.Error(result.Text)
 	}
@@ -99,4 +102,46 @@ func TestBulkTranslateSmall(t *testing.T) {
 // provides large test slice as input
 func TestBulkTranslateLarge(t *testing.T) {
 	testBulkTranslate(t, largeTestSlice)
+}
+
+func TestTranslateInterface(t *testing.T) {
+	input := map[string]interface{}{
+		"A": map[string]interface{}{
+			"B": "I'm a test",
+			"D": []string{"Example", "Example"},
+		},
+		"C": "Example",
+	}
+	params := TranslateParams{
+		Src:  "en",
+		Dest: "ru",
+	}
+	fields := []TranslateField{
+		{
+			Src:    "A.B",
+			Dest:   "A.B_ru",
+			Params: params,
+		},
+		{
+			Src:    "A.D",
+			Dest:   "A.D_ru",
+			Params: params,
+		},
+	}
+	output, err := TranslateInterface(input, fields)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Validate
+	m := objx.New(output.(map[string]interface{}))
+	if m.Get("A.B_ru").Str() != "Я тест" {
+		t.Errorf("A.B_ru is incorrect. Got %s instead", m.Get("A.B_ru").Str())
+	}
+	if m.Get("A.D_ru[0]").Str() != "пример" {
+		t.Errorf("A.D_ru[0] is incorrect. Got %s instead", m.Get("A.D_ru[0]").Str())
+	}
+	if m.Get("A.D_ru[1]").Str() != "пример" {
+		t.Errorf("A.D_ru[1] is incorrect. Got %s instead", m.Get("A.D_ru[1]").Str())
+	}
+	fmt.Println(output)
 }

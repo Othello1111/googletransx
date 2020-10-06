@@ -1,8 +1,8 @@
 name: Publish Docker image
 on:
-  push:
-    branches:
-      - master
+  create:
+    tags:
+      - v*
 jobs:
   docker:
     name: Push Docker image to GitHub Packages

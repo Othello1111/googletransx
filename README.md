@@ -15,6 +15,7 @@ This is fork of mind1949/googletrans with extended features:
 * HTML translate support
 * Built-in API server for integrations
 * Dockerized server
+* Translate interfaces directly with parameters
 
 ## Installation
 
@@ -73,6 +74,47 @@ func main() {
         panic(err)
     }
     fmt.Println(results) // Results are []Translated
+}
+```
+
+TranslateInterface (example from test)
+
+```go
+package main
+
+import (
+    "github.com/yuriizinets/googletransx"
+)
+
+func main() {
+    input := map[string]interface{}{
+        "A": map[string]interface{}{
+            "B": "I'm a test",
+            "D": []string{"Example", "Example"},
+        },
+        "C": "Example",
+    }
+    params := TranslateParams{
+        Src:  "en",
+        Dest: "ru",
+    }
+    fields := []TranslateField{
+        {
+            Src:    "A.B",
+            Dest:   "A.B_ru",
+            Params: params,
+        },
+        {
+            Src:    "A.D",
+            Dest:   "A.D_ru",
+            Params: params,
+        },
+    }
+    output, err := TranslateInterface(input, fields)
+    if err != nil {
+        t.Fatal(err)
+    }
+    fmt.Println(output) // Will be map[A:map[B:I'm a test B_ru:Я тест D:[Example Example] D_ru:[пример пример]] C:Example]
 }
 ```
 
